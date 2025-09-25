@@ -371,9 +371,9 @@
 
 
         const ConfirmationModal = ({ service, date, time, user, onClose }) => {
-            const whatsappMessage = encodeURIComponent(`Olá! Gostaria de confirmar meu agendamento para "${service.name}" no dia ${date.toLocaleDateString('pt-BR')} às ${time}. Meu nome é: ${user.name}.`);
+            const whatsappMessage = encodeURIComponent(`Olá! Gostaria de confirmar meu agendamento para "${service.name}" (Valor: ${service.price}) no dia ${date.toLocaleDateString('pt-BR')} às ${time}. Meu nome é: ${user.name}.`);
             // Lembre-se de substituir "55XXYYYYYYYYY" pelo número de WhatsApp da clínica
-            const whatsappUrl = `https://wa.me/55XXYYYYYYYYY?text=${whatsappMessage}`;
+            const whatsappUrl = `https://wa.me/5571992293834?text=${whatsappMessage}`;
 
             return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -389,6 +389,7 @@
                     <div className="text-left bg-gray-50 p-4 rounded-lg space-y-2 text-sm mb-6">
                         <p><strong>Paciente:</strong> {user.name}</p>
                         <p><strong>Serviço:</strong> {service.name}</p>
+                        <p><strong>Valor:</strong> {service.price}</p>
                         <p><strong>Data:</strong> {date.toLocaleDateString('pt-BR')} às {time}</p>
                     </div>
                     
