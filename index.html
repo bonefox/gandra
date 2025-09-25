@@ -58,7 +58,7 @@
 
     <!-- Seção do Rodapé -->
     <footer class="text-center p-8 bg-white mt-16">
-        <p class="text-gray-500 text-sm">&copy; 2025 Gandra - Todos os direitos reservados.</p>
+        <p class="text-gray-500 text-sm">&copy; 2025 Higor Gandra - Todos os direitos reservados.</p>
         <p class="text-gray-400 text-xs mt-1">Salvador, Bahia, Brasil</p>
     </footer>
 
@@ -158,7 +158,6 @@
         ];
 
         const availableTimes = ['09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00'];
-        const serviceListForPrompt = services.map(s => s.name).join(", ");
 
         // --- COMPONENTE PRINCIPAL ---
         function App() {
@@ -170,10 +169,6 @@
           const [isModalOpen, setIsModalOpen] = useState(false);
           const [isLoading, setIsLoading] = useState(false);
           
-          const [symptomQuery, setSymptomQuery] = useState('');
-          const [isSuggesting, setIsSuggesting] = useState(false);
-          const [suggestedServiceId, setSuggestedServiceId] = useState(null);
-
           const [bookedAppointments, setBookedAppointments] = useState([]);
 
           const handleBack = () => {
@@ -184,7 +179,6 @@
 
           const handleServiceSelect = (service) => {
             setSelectedService(service);
-            setSuggestedServiceId(null);
             setStep(2);
           };
 
@@ -220,25 +214,6 @@
             }
           };
           
-          const handleSymptomSuggestion = async () => {
-              if (!symptomQuery.trim()) return;
-              setIsSuggesting(true);
-              setSuggestedServiceId(null);
-              
-              const prompt = `Você é um assistente de uma clínica de saúde integrativa. Baseado nos sintomas a seguir, qual destes tratamentos você recomendaria? Tratamentos disponíveis: ${serviceListForPrompt}. Sintomas: "${symptomQuery}". Responda apenas com o nome exato de um dos tratamentos da lista.`;
-              
-              const suggestionText = await generateGeminiText(prompt);
-              
-              const foundService = services.find(service => suggestionText.toLowerCase().includes(service.name.toLowerCase()));
-              
-              if (foundService) {
-                  setSuggestedServiceId(foundService.id);
-              } else {
-                  console.log("Nenhum serviço correspondente encontrado para:", suggestionText);
-              }
-              setIsSuggesting(false);
-          };
-
           const resetFlow = () => {
               setStep(1);
               setSelectedService(null);
@@ -246,8 +221,6 @@
               setSelectedTime('');
               setUserInfo({ name: '', email: '', phone: '' });
               setIsModalOpen(false);
-              setSymptomQuery('');
-              setSuggestedServiceId(null);
           }
 
           return (
@@ -263,7 +236,7 @@
                     <StepInfo num={3} text="Seus Dados Pessoais" active={step === 3} done={step > 3} />
                 </div>
 
-                {selectedService && (
+                {selectedService && step > 1 && (
                   <div className="mt-10 p-4 bg-emerald-800 rounded-lg text-sm">
                       <h3 className="font-semibold mb-2">Resumo do Agendamento:</h3>
                       <p className="text-emerald-200"><strong>Serviço:</strong> {selectedService.name}</p>
@@ -273,7 +246,7 @@
               </div>
 
               <div className="w-full md:w-2/3 p-8 md:p-12">
-                {step === 1 && <ServiceSelector services={services} onSelect={handleServiceSelect} onSymptomChange={setSymptomQuery} symptomQuery={symptomQuery} onSymptomSubmit={handleSymptomSuggestion} isSuggesting={isSuggesting} suggestedServiceId={suggestedServiceId}/>}
+                {step === 1 && <ServiceSelector services={services} onSelect={handleServiceSelect} />}
                 {step === 2 && <DateTimePicker onBack={handleBack} selectedDate={selectedDate} onDateSelect={handleDateSelect} onTimeSelect={handleTimeSelect} availableTimes={availableTimes} selectedTime={selectedTime} bookedAppointments={bookedAppointments} selectedService={selectedService} />}
                 {step === 3 && <UserInfoForm onBack={handleBack} userInfo={userInfo} onChange={handleUserInfoChange} onSubmit={handleBookingSubmit} isLoading={isLoading} />}
               </div>
@@ -297,39 +270,16 @@
             </div>
         );
 
-        const ServiceSelector = ({ services, onSelect, onSymptomChange, symptomQuery, onSymptomSubmit, isSuggesting, suggestedServiceId }) => (
+        const ServiceSelector = ({ services, onSelect }) => (
           <div>
             <h2 className="text-2xl font-bold text-gray-800 mb-6">Escolha um serviço</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {services.map(service => (
-                <button key={service.id} onClick={() => onSelect(service)} className={`text-left p-4 border rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 ${suggestedServiceId === service.id ? 'bg-emerald-100 border-emerald-500 ring-2 ring-emerald-500 animate-pulse' : 'border-gray-200 hover:border-emerald-500 hover:bg-emerald-50'}`}>
+                <button key={service.id} onClick={() => onSelect(service)} className="text-left p-4 border rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 border-gray-200 hover:border-emerald-500 hover:bg-emerald-50">
                   <p className="font-semibold text-gray-700">{service.name}</p>
                   <p className="text-sm text-gray-500">{service.duration} min - {service.price}</p>
                 </button>
               ))}
-            </div>
-            
-            <div className="mt-10 pt-6 border-t">
-                <h3 className="text-xl font-bold text-gray-800 mb-3 flex items-center"><SparkleIcon className="w-6 h-6 mr-2 text-emerald-500" />Não sabe qual escolher?</h3>
-                <p className="text-gray-600 mb-4">Descreva como você está se sentindo e nós sugerimos o melhor tratamento para você.</p>
-                <textarea 
-                    value={symptomQuery}
-                    onChange={(e) => onSymptomChange(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 mb-4"
-                    rows="3"
-                    placeholder="Ex: Estou com dor nas costas e muito estresse no trabalho..."
-                />
-                <button 
-                    onClick={onSymptomSubmit}
-                    disabled={isSuggesting}
-                    className="w-full bg-emerald-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-emerald-700 transition-all duration-300 flex items-center justify-center disabled:bg-emerald-400 disabled:cursor-not-allowed">
-                    {isSuggesting ? (
-                         <>
-                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            Analisando...
-                        </>
-                    ) : "✨ Sugerir Tratamento"}
-                </button>
             </div>
           </div>
         );
@@ -543,4 +493,3 @@
     </script>
 </body>
 </html>
-
